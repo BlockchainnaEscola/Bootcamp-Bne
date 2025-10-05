@@ -32,8 +32,8 @@ const Dashboard = ({ address, signer, studentName, studentSchool, onLogout }: Da
         <div className="brutal-card p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">NOS Academy</h1>
-              <p className="text-muted-foreground">Dia 1: Fundamentos de Web3</p>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">Bootcamp BnE</h1>
+              <p className="text-muted-foreground">Dia 1: Internet, Futuro e Tecnologia</p>
             </div>
             <button
               onClick={onLogout}

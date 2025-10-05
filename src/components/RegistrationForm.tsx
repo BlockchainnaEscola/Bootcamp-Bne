@@ -58,9 +58,9 @@ const RegistrationForm = ({ signer, onRegistered }: RegistrationFormProps) => {
           <div className="inline-block p-4 bg-green rounded-xl border-2 border-border shadow-brutal mb-4">
             <UserPlus className="w-12 h-12" />
           </div>
-          <h2 className="text-3xl font-bold mb-2">Cadastro de Estudante</h2>
+          <h2 className="text-3xl font-bold mb-2">Bem-vindo ao Bootcamp BnE!</h2>
           <p className="text-muted-foreground">
-            Complete seu perfil para começar
+            Complete seu registro para começar sua jornada Web3
           </p>
         </div>
 
