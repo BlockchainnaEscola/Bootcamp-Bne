@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Coins, Trophy, LogOut } from "lucide-react";
+import { User, Coins, Trophy, LogOut, ArrowLeft } from "lucide-react";
 import { DAY_1_ACTIVITIES } from "@/data/activities";
 import ActivityCard from "./ActivityCard";
 
@@ -8,10 +8,12 @@ interface DashboardProps {
   signer: any;
   studentName: string;
   studentSchool: string;
+  selectedDay: number;
   onLogout: () => void;
+  onBackToHome: () => void;
 }
 
-const Dashboard = ({ address, signer, studentName, studentSchool, onLogout }: DashboardProps) => {
+const Dashboard = ({ address, signer, studentName, studentSchool, selectedDay, onLogout, onBackToHome }: DashboardProps) => {
   const [completedActivities, setCompletedActivities] = useState<Set<number>>(new Set());
   const [nosBalance, setNosBalance] = useState(0);
 
@@ -25,23 +27,43 @@ const Dashboard = ({ address, signer, studentName, studentSchool, onLogout }: Da
 
   const progress = (completedActivities.size / DAY_1_ACTIVITIES.length) * 100;
 
+  const getDayTitle = () => {
+    const titles = [
+      "Dia 1: Internet, Futuro e Tecnologia",
+      "Dia 2: NFTs e Arte Digital",
+      "Dia 3: Smart Contracts",
+      "Dia 4: Projeto Final"
+    ];
+    return titles[selectedDay - 1] || titles[0];
+  };
+
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="brutal-card p-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">Bootcamp BnE</h1>
-              <p className="text-muted-foreground">Dia 1: Internet, Futuro e Tecnologia</p>
-            </div>
+          <div className="flex flex-col gap-4">
             <button
-              onClick={onLogout}
-              className="brutal-button py-2 px-4 bg-destructive text-destructive-foreground flex items-center gap-2"
+              onClick={onBackToHome}
+              className="brutal-button py-2 px-4 bg-card text-foreground flex items-center gap-2 w-fit"
             >
-              <LogOut className="w-4 h-4" />
-              Desconectar
+              <ArrowLeft className="w-4 h-4" />
+              Voltar ao Dashboard
             </button>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">Bootcamp BnE</h1>
+                <p className="text-muted-foreground">{getDayTitle()}</p>
+              </div>
+              <button
+                onClick={onLogout}
+                className="brutal-button py-2 px-4 bg-destructive text-destructive-foreground flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Desconectar
+              </button>
+            </div>
           </div>
         </div>
 
