@@ -1,38 +1,53 @@
-import { useState } from "react";
-import WalletConnect from "@/components/WalletConnect";
-import RegistrationForm from "@/components/RegistrationForm";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import Auth from "@/components/Auth";
 import Home from "@/components/Home";
 import Dashboard from "@/components/Dashboard";
 
-type AppState = "connect" | "register" | "home" | "day";
+type AppState = "auth" | "home" | "day";
 
 const Index = () => {
-  const [appState, setAppState] = useState<AppState>("connect");
-  const [address, setAddress] = useState("");
-  const [signer, setSigner] = useState<any>(null);
-  const [studentName, setStudentName] = useState("");
-  const [studentSchool, setStudentSchool] = useState("");
+  const { user, loading } = useAuth();
+  const [appState, setAppState] = useState<AppState>("auth");
+  const [profile, setProfile] = useState<any>(null);
   const [selectedDay, setSelectedDay] = useState(1);
 
-  const handleWalletConnect = (walletAddress: string, walletSigner: any) => {
-    setAddress(walletAddress);
-    setSigner(walletSigner);
-    setAppState("register");
-  };
+  useEffect(() => {
+    if (user && !loading) {
+      loadProfile();
+    } else if (!loading) {
+      setAppState("auth");
+    }
+  }, [user, loading]);
 
-  const handleRegistered = () => {
-    // In a real app, fetch student data from contract
-    setStudentName("Estudante Demo");
-    setStudentSchool("Escola Demo");
+  const loadProfile = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error) {
+      console.error('Error loading profile:', error);
+      return;
+    }
+
+    setProfile(data);
     setAppState("home");
   };
 
-  const handleLogout = () => {
-    setAddress("");
-    setSigner(null);
-    setStudentName("");
-    setStudentSchool("");
-    setAppState("connect");
+  const handleAuthenticated = () => {
+    loadProfile();
+  };
+
+  const handleLogout = async () => {
+    const { signOut } = useAuth();
+    await signOut();
+    setProfile(null);
+    setAppState("auth");
   };
 
   const handleSelectDay = (day: number) => {
@@ -44,38 +59,40 @@ const Index = () => {
     setAppState("home");
   };
 
-  if (appState === "connect") {
-    return <WalletConnect onConnect={handleWalletConnect} />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-lg font-bold">Carregando...</p>
+      </div>
+    );
   }
 
-  if (appState === "register") {
-    return <RegistrationForm signer={signer} onRegistered={handleRegistered} />;
+  if (!user || appState === "auth") {
+    return <Auth onAuthenticated={handleAuthenticated} />;
   }
 
-  if (appState === "home") {
+  if (appState === "home" && profile) {
     return (
       <Home
-        address={address}
-        signer={signer}
-        studentName={studentName}
-        studentSchool={studentSchool}
+        profile={profile}
         onLogout={handleLogout}
         onSelectDay={handleSelectDay}
       />
     );
   }
 
-  return (
-    <Dashboard
-      address={address}
-      signer={signer}
-      studentName={studentName}
-      studentSchool={studentSchool}
-      selectedDay={selectedDay}
-      onLogout={handleLogout}
-      onBackToHome={handleBackToHome}
-    />
-  );
+  if (appState === "day" && profile) {
+    return (
+      <Dashboard
+        profile={profile}
+        selectedDay={selectedDay}
+        onLogout={handleLogout}
+        onBackToHome={handleBackToHome}
+      />
+    );
+  }
+
+  return null;
 };
 
 export default Index;

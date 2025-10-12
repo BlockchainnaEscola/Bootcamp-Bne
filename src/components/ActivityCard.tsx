@@ -1,19 +1,28 @@
 import { useState } from "react";
 import { BookOpen, HelpCircle, ExternalLink, Award, Check, Coins } from "lucide-react";
 import { Activity } from "@/data/activities";
+import { useContract, useAddress, useSDK } from "@thirdweb-dev/react";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { saveActivityCompletion, saveBadgeMint } from "@/lib/web3";
+import { CONTRACTS } from "@/lib/contracts";
 
 interface ActivityCardProps {
   activity: Activity;
   isCompleted: boolean;
-  onComplete: (activityId: number) => void;
+  selectedDay: number;
+  onComplete: (activityId: number, txHash: string, rewardAmount: number) => void;
 }
 
-const ActivityCard = ({ activity, isCompleted, onComplete }: ActivityCardProps) => {
+const ActivityCard = ({ activity, isCompleted, selectedDay, onComplete }: ActivityCardProps) => {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showContent, setShowContent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { user } = useAuth();
+  const address = useAddress();
+  const sdk = useSDK();
+  const { contract: badgeContract } = useContract(CONTRACTS.INGRESSO_BADGE);
 
   const getIcon = () => {
     switch (activity.type) {
@@ -45,24 +54,89 @@ const ActivityCard = ({ activity, isCompleted, onComplete }: ActivityCardProps) 
   };
 
   const handleComplete = async () => {
+    if (!user || !address) {
+      toast.error("Conecte sua carteira para continuar");
+      return;
+    }
+
     setIsProcessing(true);
     
-    // Simulate blockchain transaction
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      // Simula transação on-chain
+      // TODO: Implementar transações reais quando os contratos forem deployados
+      const mockTxHash = `0x${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`;
+      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Salva no banco de dados
+      await saveActivityCompletion(user.id, activity.id, selectedDay, mockTxHash, activity.reward);
+      
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#ff99cc", "#99ff99", "#ffff66"],
+      });
+      
+      toast.success(`Você ganhou ${activity.reward} $NOS!`, {
+        icon: <Coins className="w-4 h-4" />,
+      });
+      
+      onComplete(activity.id, mockTxHash, activity.reward);
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao completar atividade");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleBadgeMint = async () => {
+    if (!user || !address || !badgeContract) {
+      toast.error("Conecte sua carteira e aguarde os contratos carregarem");
+      return;
+    }
+
+    setIsProcessing(true);
     
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ["#ff99cc", "#99ff99", "#ffff66"],
-    });
-    
-    toast.success(`Você ganhou ${activity.reward} $NOS!`, {
-      icon: <Coins className="w-4 h-4" />,
-    });
-    
-    onComplete(activity.id);
-    setIsProcessing(false);
+    try {
+      // TODO: Implementar mint real quando o contrato for deployado
+      // const tx = await badgeContract.erc1155.mint({
+      //   to: address,
+      //   supply: 1,
+      //   metadata: {
+      //     name: activity.badge?.name,
+      //     description: "Badge do Bootcamp BnE"
+      //   }
+      // });
+      
+      const mockTxHash = `0x${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`;
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Salva badge no banco
+      if (activity.badge) {
+        await saveBadgeMint(user.id, activity.id, activity.badge.name, mockTxHash);
+      }
+      
+      // Salva completion também
+      await saveActivityCompletion(user.id, activity.id, selectedDay, mockTxHash, activity.reward);
+      
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ["#ff99cc", "#99ff99", "#ffff66"],
+      });
+      
+      toast.success(`Badge mintado! +${activity.reward} $NOS`, {
+        icon: <Award className="w-4 h-4" />,
+      });
+      
+      onComplete(activity.id, mockTxHash, activity.reward);
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao mintar badge");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleQuizSubmit = () => {
@@ -80,10 +154,6 @@ const ActivityCard = ({ activity, isCompleted, onComplete }: ActivityCardProps) 
   const handleLinkClick = () => {
     window.open(activity.link?.url, "_blank");
     setTimeout(() => handleComplete(), 1000);
-  };
-
-  const handleBadgeMint = () => {
-    handleComplete();
   };
 
   return (

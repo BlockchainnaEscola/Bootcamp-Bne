@@ -1,28 +1,42 @@
 import { useState, useEffect } from "react";
 import { User, Coins, Trophy, LogOut, ArrowLeft } from "lucide-react";
 import { DAY_1_ACTIVITIES } from "@/data/activities";
+import { getUserActivities, getUserNOSBalance } from "@/lib/web3";
+import { useAuth } from "@/hooks/useAuth";
 import ActivityCard from "./ActivityCard";
 
 interface DashboardProps {
-  address: string;
-  signer: any;
-  studentName: string;
-  studentSchool: string;
+  profile: any;
   selectedDay: number;
   onLogout: () => void;
   onBackToHome: () => void;
 }
 
-const Dashboard = ({ address, signer, studentName, studentSchool, selectedDay, onLogout, onBackToHome }: DashboardProps) => {
+const Dashboard = ({ profile, selectedDay, onLogout, onBackToHome }: DashboardProps) => {
+  const { user } = useAuth();
   const [completedActivities, setCompletedActivities] = useState<Set<number>>(new Set());
   const [nosBalance, setNosBalance] = useState(0);
+  const { name: studentName, school: studentSchool, wallet_address: address } = profile;
 
-  const handleActivityComplete = (activityId: number) => {
-    setCompletedActivities(prev => new Set([...prev, activityId]));
-    const activity = DAY_1_ACTIVITIES.find(a => a.id === activityId);
-    if (activity) {
-      setNosBalance(prev => prev + activity.reward);
+  useEffect(() => {
+    if (user) {
+      loadUserData();
     }
+  }, [user, selectedDay]);
+
+  const loadUserData = async () => {
+    if (!user) return;
+    
+    const activities = await getUserActivities(user.id, selectedDay);
+    const balance = await getUserNOSBalance(user.id);
+    
+    setCompletedActivities(new Set(activities.map(a => a.activity_id)));
+    setNosBalance(balance);
+  };
+
+  const handleActivityComplete = async (activityId: number, txHash: string, rewardAmount: number) => {
+    setCompletedActivities(prev => new Set([...prev, activityId]));
+    setNosBalance(prev => prev + rewardAmount);
   };
 
   const progress = (completedActivities.size / DAY_1_ACTIVITIES.length) * 100;
@@ -126,6 +140,7 @@ const Dashboard = ({ address, signer, studentName, studentSchool, selectedDay, o
                 key={activity.id}
                 activity={activity}
                 isCompleted={completedActivities.has(activity.id)}
+                selectedDay={selectedDay}
                 onComplete={handleActivityComplete}
               />
             ))}

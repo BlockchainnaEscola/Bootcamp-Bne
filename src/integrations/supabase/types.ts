@@ -14,7 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activity_completions: {
+        Row: {
+          activity_id: number
+          completed_at: string
+          day: number
+          id: string
+          reward_amount: number
+          tx_hash: string
+          user_id: string
+        }
+        Insert: {
+          activity_id: number
+          completed_at?: string
+          day: number
+          id?: string
+          reward_amount: number
+          tx_hash: string
+          user_id: string
+        }
+        Update: {
+          activity_id?: number
+          completed_at?: string
+          day?: number
+          id?: string
+          reward_amount?: number
+          tx_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      badges: {
+        Row: {
+          badge_id: number
+          badge_name: string
+          id: string
+          minted_at: string
+          token_id: string | null
+          tx_hash: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: number
+          badge_name: string
+          id?: string
+          minted_at?: string
+          token_id?: string | null
+          tx_hash: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: number
+          badge_name?: string
+          id?: string
+          minted_at?: string
+          token_id?: string | null
+          tx_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          school: string
+          updated_at: string
+          user_id: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          school: string
+          updated_at?: string
+          user_id: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          school?: string
+          updated_at?: string
+          user_id?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

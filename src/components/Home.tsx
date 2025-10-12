@@ -2,10 +2,7 @@ import { useState } from "react";
 import { User, Coins, Trophy, LogOut, Calendar, BookOpen, Code, Rocket, Award } from "lucide-react";
 
 interface HomeProps {
-  address: string;
-  signer: any;
-  studentName: string;
-  studentSchool: string;
+  profile: any;
   onLogout: () => void;
   onSelectDay: (day: number) => void;
 }
@@ -45,7 +42,8 @@ const BOOTCAMP_DAYS = [
   },
 ];
 
-const Home = ({ address, signer, studentName, studentSchool, onLogout, onSelectDay }: HomeProps) => {
+const Home = ({ profile, onLogout, onSelectDay }: HomeProps) => {
+  const { name: studentName, school: studentSchool, wallet_address: address } = profile;
   const [totalNOS, setTotalNOS] = useState(0);
   const completedDays = 0; // TODO: Track from actual progress
 
