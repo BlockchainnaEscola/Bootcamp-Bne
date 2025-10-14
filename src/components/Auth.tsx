@@ -1,26 +1,22 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
 import { useAddress, ConnectWallet } from "@thirdweb-dev/react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card } from "./ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { LogIn, UserPlus } from "lucide-react";
+import { Wallet } from "lucide-react";
 
 interface AuthProps {
   onAuthenticated: () => void;
 }
 
 const Auth = ({ onAuthenticated }: AuthProps) => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [school, setSchool] = useState("");
   const [loading, setLoading] = useState(false);
   
-  const { signIn, signUp } = useAuth();
   const address = useAddress();
   const { toast } = useToast();
 
@@ -36,31 +32,47 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
       return;
     }
 
+    if (!name || !school) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha todos os campos para continuar.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) throw error;
+      // Check if profile already exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('wallet_address', address)
+        .single();
+
+      if (existingProfile) {
         toast({
-          title: "Login realizado!",
-          description: "Bem-vindo de volta ao Bootcamp BnE.",
+          title: "Bem-vindo de volta!",
+          description: "Sua carteira já está registrada.",
         });
         onAuthenticated();
       } else {
-        if (!name || !school) {
-          toast({
-            title: "Campos obrigatórios",
-            description: "Preencha todos os campos.",
-            variant: "destructive"
+        // Create new profile
+        const { error } = await supabase
+          .from('profiles')
+          .insert({
+            wallet_address: address,
+            name,
+            school,
+            user_id: address // Using wallet address as user_id for wallet-based auth
           });
-          return;
-        }
-        const { error } = await signUp(email, password, name, school, address);
+
         if (error) throw error;
+
         toast({
           title: "Cadastro realizado!",
-          description: "Sua conta foi criada com sucesso.",
+          description: "Seu perfil foi criado com sucesso.",
         });
         onAuthenticated();
       }
@@ -81,7 +93,7 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-2">Bootcamp BnE</h1>
           <p className="text-muted-foreground">
-            {isLogin ? "Entre na sua conta" : "Crie sua conta"}
+            Conecte sua carteira para começar
           </p>
         </div>
 
@@ -100,100 +112,59 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
             )}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label className="font-bold">2. Dados de Acesso</Label>
-              
-              {!isLogin && (
-                <>
-                  <div>
-                    <Label htmlFor="name">Nome Completo</Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="brutal-input"
-                      required={!isLogin}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="school">Instituição</Label>
-                    <select
-                      id="school"
-                      value={school}
-                      onChange={(e) => setSchool(e.target.value)}
-                      className="brutal-input w-full"
-                      required={!isLogin}
-                    >
-                      <option value="">Selecione...</option>
-                      <option value="UFPE">UFPE</option>
-                      <option value="UFRPE">UFRPE</option>
-                      <option value="UPE">UPE</option>
-                      <option value="IFPE">IFPE</option>
-                      <option value="Uninassau">Uninassau</option>
-                      <option value="Estácio">Estácio</option>
-                      <option value="Outra">Outra</option>
-                    </select>
-                  </div>
-                </>
-              )}
-              
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="brutal-input"
-                  required
-                />
+          {address && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label className="font-bold">2. Complete seu Perfil</Label>
+                
+                <div>
+                  <Label htmlFor="name">Nome Completo</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="brutal-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="school">Instituição</Label>
+                  <select
+                    id="school"
+                    value={school}
+                    onChange={(e) => setSchool(e.target.value)}
+                    className="brutal-input w-full"
+                    required
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="UFPE">UFPE</option>
+                    <option value="UFRPE">UFRPE</option>
+                    <option value="UPE">UPE</option>
+                    <option value="IFPE">IFPE</option>
+                    <option value="Uninassau">Uninassau</option>
+                    <option value="Estácio">Estácio</option>
+                    <option value="Outra">Outra</option>
+                  </select>
+                </div>
               </div>
-              
-              <div>
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="brutal-input"
-                  required
-                />
-              </div>
-            </div>
 
-            <Button
-              type="submit"
-              className="brutal-button w-full bg-green text-foreground"
-              disabled={loading || !address}
-            >
-              {loading ? (
-                "Processando..."
-              ) : isLogin ? (
-                <>
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Entrar
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Cadastrar
-                </>
-              )}
-            </Button>
-          </form>
-
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {isLogin ? "Não tem conta? Cadastre-se" : "Já tem conta? Faça login"}
-            </button>
-          </div>
+              <Button
+                type="submit"
+                className="brutal-button w-full bg-green text-foreground"
+                disabled={loading}
+              >
+                {loading ? (
+                  "Processando..."
+                ) : (
+                  <>
+                    <Wallet className="w-4 h-4 mr-2" />
+                    Entrar no Bootcamp
+                  </>
+                )}
+              </Button>
+            </form>
+          )}
         </div>
       </Card>
     </div>

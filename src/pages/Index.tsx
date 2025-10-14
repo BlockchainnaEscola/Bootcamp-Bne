@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAddress } from "@thirdweb-dev/react";
 import { supabase } from "@/integrations/supabase/client";
 import Auth from "@/components/Auth";
 import Home from "@/components/Home";
@@ -8,35 +8,41 @@ import Dashboard from "@/components/Dashboard";
 type AppState = "auth" | "home" | "day";
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const address = useAddress();
   const [appState, setAppState] = useState<AppState>("auth");
   const [profile, setProfile] = useState<any>(null);
   const [selectedDay, setSelectedDay] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user && !loading) {
+    if (address) {
       loadProfile();
-    } else if (!loading) {
+    } else {
       setAppState("auth");
+      setLoading(false);
     }
-  }, [user, loading]);
+  }, [address]);
 
   const loadProfile = async () => {
-    if (!user) return;
+    if (!address) return;
     
+    setLoading(true);
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('wallet_address', address)
       .single();
 
     if (error) {
       console.error('Error loading profile:', error);
+      setAppState("auth");
+      setLoading(false);
       return;
     }
 
     setProfile(data);
     setAppState("home");
+    setLoading(false);
   };
 
   const handleAuthenticated = () => {
@@ -44,8 +50,6 @@ const Index = () => {
   };
 
   const handleLogout = async () => {
-    const { signOut } = useAuth();
-    await signOut();
     setProfile(null);
     setAppState("auth");
   };
@@ -67,7 +71,7 @@ const Index = () => {
     );
   }
 
-  if (!user || appState === "auth") {
+  if (!address || appState === "auth") {
     return <Auth onAuthenticated={handleAuthenticated} />;
   }
 
