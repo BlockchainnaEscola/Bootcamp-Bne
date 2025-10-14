@@ -3,12 +3,25 @@ import { ThirdwebProvider } from "@thirdweb-dev/react";
 import App from "./App.tsx";
 import "./index.css";
 
-// Celo Mainnet Chain ID
-const CELO_CHAIN_ID = 42220;
+// Define Celo Mainnet configuration
+const celoMainnet = {
+  chainId: 42220,
+  rpc: ["https://forno.celo.org"],
+  nativeCurrency: {
+    name: "CELO",
+    symbol: "CELO",
+    decimals: 18,
+  },
+  shortName: "celo",
+  slug: "celo",
+  testnet: false,
+  chain: "CELO",
+  name: "Celo Mainnet",
+};
 
 createRoot(document.getElementById("root")!).render(
   <ThirdwebProvider 
-    activeChain={CELO_CHAIN_ID}
+    activeChain={celoMainnet}
     clientId={import.meta.env.VITE_THIRDWEB_CLIENT_ID || ""}
   >
     <App />
